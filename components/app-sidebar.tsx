@@ -12,6 +12,7 @@ import {
   LogOut,
   Zap,
   ChevronDown,
+  CreditCard,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -24,7 +25,8 @@ const NAV_ITEMS = [
 ]
 
 const BOTTOM_ITEMS = [
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/billing",  label: "Billing",  icon: CreditCard },
+  { href: "/settings", label: "Settings", icon: Settings   },
 ]
 
 export function AppSidebar() {

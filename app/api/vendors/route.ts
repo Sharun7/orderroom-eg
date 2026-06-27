@@ -9,6 +9,8 @@ import {
   getVendorsWithProducts,
   createVendor,
   createProduct,
+  getSubscription,
+  getVendorCount,
   type VendorCategory,
   type ProductUnit,
   type Product,
@@ -59,6 +61,26 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
+
+    // ── Plan limit enforcement ──────────────────────────────────────────────
+    const [sub, vendorCount] = await Promise.all([
+      getSubscription(session.user.businessId).catch(() => null),
+      getVendorCount(session.user.businessId).catch(() => 0),
+    ])
+    const vendorLimit = sub?.vendorLimit ?? 1  // default: Free plan = 1 vendor
+    if (vendorCount >= vendorLimit) {
+      return NextResponse.json(
+        {
+          error:       "Vendor limit reached",
+          vendorLimit,
+          vendorCount,
+          currentPlan: sub?.plan ?? "free",
+          upgradeUrl:  "/billing",
+        },
+        { status: 403 },
+      )
+    }
+    // ───────────────────────────────────────────────────────────────────────
 
     const vendor = await createVendor({
       name,

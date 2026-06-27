@@ -20,6 +20,24 @@ import type {
 // Re-export Prisma model types for use across the app
 export type { Business, User, Vendor, Product, Order, OrderItem }
 
+/**
+ * Subscription — defined inline until `prisma generate` picks up the schema
+ * addition. Once the DB is provisioned and `prisma generate` has run, this
+ * can be replaced with the @prisma/client import.
+ */
+export type Subscription = {
+  id:               string
+  businessId:       string
+  stripeCustomerId: string | null
+  stripePriceId:    string | null
+  stripeSubId:      string | null
+  plan:             string
+  status:           string
+  vendorLimit:      number
+  currentPeriodEnd: Date | null
+  createdAt:        Date
+}
+
 // Convenience union types matching the Prisma schema string literals
 export type BusinessType = "restaurant" | "hotel" | "catering"
 export type UserRole = "owner" | "manager" | "staff"
@@ -254,6 +272,46 @@ export async function markOrderItemDelivered(
     where: { confirmToken },
     data: { deliveredAt: new Date() },
   })
+}
+
+// ---------------------------------------------------------------------------
+// Subscriptions
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = prisma as any
+
+export async function getSubscription(businessId: string): Promise<Subscription | null> {
+  return db.subscription.findUnique({ where: { businessId } })
+}
+
+export async function upsertSubscription(data: {
+  businessId:       string
+  stripeCustomerId?: string
+  stripePriceId?:   string
+  stripeSubId?:     string
+  plan:             string
+  status:           string
+  vendorLimit:      number
+  currentPeriodEnd?: Date
+}): Promise<Subscription> {
+  return db.subscription.upsert({
+    where:  { businessId: data.businessId },
+    update: {
+      stripeCustomerId: data.stripeCustomerId,
+      stripePriceId:    data.stripePriceId,
+      stripeSubId:      data.stripeSubId,
+      plan:             data.plan,
+      status:           data.status,
+      vendorLimit:      data.vendorLimit,
+      currentPeriodEnd: data.currentPeriodEnd,
+    },
+    create: { ...data },
+  })
+}
+
+export async function getVendorCount(businessId: string): Promise<number> {
+  return db.vendor.count({ where: { businessId } })
 }
 
 // ---------------------------------------------------------------------------

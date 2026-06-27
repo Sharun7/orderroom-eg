@@ -18,9 +18,24 @@ model Business {
   type      String   // "restaurant" | "hotel" | "catering"
   createdAt DateTime @default(now())
 
-  users   User[]
-  vendors Vendor[]
-  orders  Order[]
+  users        User[]
+  vendors      Vendor[]
+  orders       Order[]
+  subscription Subscription?
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  businessId       String    @unique
+  business         Business  @relation(fields: [businessId], references: [id])
+  stripeCustomerId String?
+  stripePriceId    String?
+  stripeSubId      String?
+  plan             String    @default("free") // "free" | "starter" | "pro"
+  status           String    @default("active")
+  vendorLimit      Int       @default(1)      // free=1, starter=10, pro=999
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
 }
 
 model User {

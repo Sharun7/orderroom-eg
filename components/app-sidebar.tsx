@@ -13,6 +13,7 @@ import {
   Zap,
   ChevronDown,
   CreditCard,
+  Network,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -25,8 +26,9 @@ const NAV_ITEMS = [
 ]
 
 const BOTTOM_ITEMS = [
-  { href: "/billing",  label: "Billing",  icon: CreditCard },
-  { href: "/settings", label: "Settings", icon: Settings   },
+  { href: "/billing",      label: "Billing",      icon: CreditCard },
+  { href: "/architecture", label: "Architecture", icon: Network    },
+  { href: "/settings",     label: "Settings",     icon: Settings   },
 ]
 
 export function AppSidebar() {

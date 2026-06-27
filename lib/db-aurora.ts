@@ -3,24 +3,30 @@ import { Signer } from '@aws-sdk/rds-signer'
 import { awsCredentialsProvider } from '@vercel/functions/oidc'
 import { attachDatabasePool } from '@vercel/functions'
 
+const ROLE_ARN  = process.env.AWS_APG_AWS_ROLE_ARN  ?? process.env.AWS_ROLE_ARN  ?? ""
+const REGION    = process.env.AWS_APG_AWS_REGION    ?? process.env.AWS_REGION    ?? "us-east-1"
+const PGHOST    = process.env.AWS_APG_PGHOST        ?? process.env.PGHOST        ?? ""
+const PGUSER    = process.env.AWS_APG_PGUSER        ?? process.env.PGUSER        ?? "postgres"
+const PGDB      = process.env.AWS_APG_PGDATABASE    ?? process.env.PGDATABASE    ?? "postgres"
+
 // Initialize RDS Signer with AWS IAM authentication
 const signer = new Signer({
   credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_APG_AWS_ROLE_ARN || process.env.AWS_ROLE_ARN,
-    clientConfig: { region: process.env.AWS_APG_AWS_REGION || process.env.AWS_REGION },
+    roleArn: ROLE_ARN,
+    clientConfig: { region: REGION },
   }),
-  region: process.env.AWS_APG_AWS_REGION || process.env.AWS_REGION,
-  hostname: process.env.AWS_APG_PGHOST || process.env.PGHOST,
-  username: process.env.AWS_APG_PGUSER || process.env.PGUSER || 'postgres',
-  port: parseInt(process.env.AWS_APG_PGPORT || '5432'),
+  region: REGION,
+  hostname: PGHOST,
+  username: PGUSER,
+  port: parseInt(process.env.AWS_APG_PGPORT ?? "5432"),
 })
 
 // Create connection pool
 const pool = new Pool({
-  host: process.env.AWS_APG_PGHOST || process.env.PGHOST,
-  database: process.env.AWS_APG_PGDATABASE || process.env.PGDATABASE || 'postgres',
-  port: parseInt(process.env.AWS_APG_PGPORT || '5432'),
-  user: process.env.AWS_APG_PGUSER || process.env.PGUSER || 'postgres',
+  host: PGHOST,
+  database: PGDB,
+  port: parseInt(process.env.AWS_APG_PGPORT ?? "5432"),
+  user: PGUSER,
   // Generate auth token dynamically (cached for up to 15 minutes)
   password: () => signer.getAuthToken(),
   // SSL configuration for AWS Aurora

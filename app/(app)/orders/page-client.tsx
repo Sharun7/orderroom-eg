@@ -31,32 +31,32 @@ export default function OrdersPageClient({
   // Fallback to demo seed data if no orders provided
   const fallbackSeed: DemoOrder[] = [
   {
-    id: "o1", businessId: "b1", status: "confirmed", notes: undefined,
+    id: "o1", businessId: "b1", status: "confirmed", notes: null,
     date: new Date(), createdAt: new Date(Date.now() - 7200000),
     vendorName: "Fresh Farm Produce", vendorEmail: "orders@freshfarm.com", totalItems: 4,
     sentAt: new Date(Date.now() - 7200000).toISOString(),
     confirmedAt: new Date(Date.now() - 3600000).toISOString(),
   },
   {
-    id: "o2", businessId: "b1", status: "sent", notes: undefined,
+    id: "o2", businessId: "b1", status: "sent", notes: null,
     date: new Date(), createdAt: new Date(Date.now() - 5400000),
     vendorName: "Prime Cuts Meats", vendorEmail: "delivery@primecuts.com", totalItems: 3,
     sentAt: new Date(Date.now() - 5400000).toISOString(),
   },
   {
-    id: "o3", businessId: "b1", status: "delivered", notes: undefined,
+    id: "o3", businessId: "b1", status: "delivered", notes: null,
     date: new Date(), createdAt: new Date(Date.now() - 14400000),
     vendorName: "Golden Grain Bakery", vendorEmail: "wholesale@goldengrain.com", totalItems: 3,
     sentAt: new Date(Date.now() - 14400000).toISOString(),
     confirmedAt: new Date(Date.now() - 10800000).toISOString(),
   },
   {
-    id: "o4", businessId: "b1", status: "draft", notes: undefined,
+    id: "o4", businessId: "b1", status: "draft", notes: null,
     date: new Date(), createdAt: new Date(Date.now() - 1800000),
     vendorName: "Ocean Select Seafood", vendorEmail: "ops@oceanselect.com", totalItems: 2,
   },
   {
-    id: "o5", businessId: "b1", status: "draft", notes: undefined,
+    id: "o5", businessId: "b1", status: "draft", notes: null,
     date: new Date(), createdAt: new Date(Date.now() - 900000),
     vendorName: "ThermoStar Beverages", vendorEmail: "b2b@thermostar.com", totalItems: 2,
   },

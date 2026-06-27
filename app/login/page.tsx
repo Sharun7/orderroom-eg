@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react"
 
@@ -19,25 +20,20 @@ export default function LoginPage() {
     setError("")
 
     try {
-      // Demo mode: Accept demo credentials
-      if (email === "demo@orderroom.io" && password === "demo1234") {
-        // Store demo session in localStorage for demo
-        localStorage.setItem("demo_session", JSON.stringify({
-          email,
-          name: "Alex Rivera",
-          businessId: "demo-business-id"
-        }))
-        // Redirect to dashboard
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 500)
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error || !result?.ok) {
+        setError("Invalid email or password. Try demo@orderroom.io / demo1234")
+        setLoading(false)
         return
       }
 
-      // For other credentials, show error
-      setError("Demo mode only accepts: demo@orderroom.io / demo1234")
-      setLoading(false)
-    } catch (err) {
+      router.push("/dashboard")
+    } catch {
       setError("An error occurred. Please try again.")
       setLoading(false)
     }

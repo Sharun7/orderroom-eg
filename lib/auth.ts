@@ -2,7 +2,24 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
-import { getUserByEmail, createBusiness, createUser } from "@/lib/db"
+
+// Lazy-load DB helpers so a missing/unbuilt Prisma client never crashes at module load time
+async function safeGetUserByEmail(email: string) {
+  try {
+    const { getUserByEmail } = await import("@/lib/db")
+    return getUserByEmail(email)
+  } catch {
+    return null
+  }
+}
+async function safeCreateBusiness(data: Parameters<typeof import("@/lib/db").createBusiness>[0]) {
+  const { createBusiness } = await import("@/lib/db")
+  return createBusiness(data)
+}
+async function safeCreateUser(data: Parameters<typeof import("@/lib/db").createUser>[0]) {
+  const { createUser } = await import("@/lib/db")
+  return createUser(data)
+}
 
 declare module "next-auth" {
   interface Session {
@@ -53,7 +70,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await getUserByEmail(credentials.email)
+          const user = await safeGetUserByEmail(credentials.email)
           if (!user || !user.passwordHash) return null
 
           const passwordMatch = await bcrypt.compare(
@@ -98,14 +115,14 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === "google" && user.email) {
         try {
-          const existing = await getUserByEmail(user.email)
+          const existing = await safeGetUserByEmail(user.email)
           if (!existing) {
-            const business = await createBusiness({
+            const business = await safeCreateBusiness({
               name:  user.name ?? user.email.split("@")[0],
               email: user.email,
               type:  "restaurant",
             })
-            const newUser = await createUser({
+            const newUser = await safeCreateUser({
               name:         user.name ?? "Owner",
               email:        user.email,
               passwordHash: "", // no password for OAuth users
@@ -118,8 +135,8 @@ export const authOptions: NextAuthOptions = {
             user.role       = newUser.role
           } else {
             user.id         = existing.id
-            user.businessId = existing.businessId
-            user.role       = existing.role
+            user.businessId = (existing as { businessId: string }).businessId
+            user.role       = (existing as { role: string }).role
           }
         } catch {
           // DB not reachable — allow sign-in anyway so Google flow doesn't break

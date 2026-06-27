@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getOrderEventsForBusiness } from "@/lib/dynamo"
 import DashboardClient from "@/components/dashboard-client"
+import type { DisplayOrder } from "@/components/order-status-board"
 
 // Inline types until Prisma generates them
 type Vendor = { id: string; name: string; email: string; phone?: string; category: string; businessId: string; createdAt: Date }
@@ -18,6 +19,31 @@ type OrderWithItems = Order & {
   })[]
 }
 
+// Shape must match DynamoEvent in dashboard-client.tsx
+type DashboardEvent = { orderId: string; eventType: string; timestamp: string; data?: Record<string, unknown> }
+
+const DEMO_EVENTS: DashboardEvent[] = [
+  { orderId: "demo-order-1", eventType: "ORDER_SENT",        timestamp: new Date(Date.now() - 3600000).toISOString(), data: { vendorName: "Fresh Farm Co." } },
+  { orderId: "demo-order-1", eventType: "VENDOR_CONFIRMED",  timestamp: new Date(Date.now() - 1800000).toISOString(), data: { vendorName: "Prime Cuts" } },
+  { orderId: "demo-order-1", eventType: "VENDOR_CONFIRMED",  timestamp: new Date(Date.now() - 900000).toISOString(),  data: { vendorName: "Ocean Select" } },
+]
+
+const DEMO_ORDERS: DisplayOrder[] = [
+  {
+    id: "demo-order-1",
+    businessId: "demo-business-id",
+    status: "sent",
+    notes: null,
+    date: new Date(),
+    createdAt: new Date(Date.now() - 3600000),
+    vendorName: "Fresh Farm Co.",
+    vendorEmail: "freshfarm@demo.com",
+    totalItems: 5,
+    sentAt: new Date(Date.now() - 3600000).toISOString(),
+    confirmedAt: new Date(Date.now() - 1800000).toISOString(),
+  },
+]
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.businessId) {
@@ -25,43 +51,57 @@ export default async function DashboardPage() {
   }
 
   const businessId = session.user.businessId
+  const isDemo = businessId === "demo-business-id"
 
-  // Fetch today's order with all items, vendors, and products
+  // For demo session, return demo data immediately without any DB calls
+  if (isDemo) {
+    return (
+      <DashboardClient
+        vendorCount={6}
+        ordersCount={5}
+        confirmedCount={3}
+        pendingCount={2}
+        orders={DEMO_ORDERS}
+        recentEvents={DEMO_EVENTS}
+      />
+    )
+  }
+
+  // Real DB queries for authenticated non-demo users
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const todayOrder: OrderWithItems | null = await prisma.order.findFirst({
-    where: {
-      businessId,
-      date: {
-        gte: today,
-        lt: new Date(today.getTime() + 86400000), // tomorrow
+  let todayOrder: OrderWithItems | null = null
+  let vendorCount = 0
+  let recentEvents: DashboardEvent[] = []
+
+  try {
+    todayOrder = await prisma.order.findFirst({
+      where: {
+        businessId,
+        date: { gte: today, lt: new Date(today.getTime() + 86400000) },
       },
-    },
-    include: {
-      items: {
-        include: {
-          vendor: true,
-          product: true,
-        },
-      },
-    },
-  })
+      include: { items: { include: { vendor: true, product: true } } },
+    }) as OrderWithItems | null
+    vendorCount = await prisma.vendor.count({ where: { businessId } })
+    const rawEvents = await getOrderEventsForBusiness(businessId)
+    recentEvents = rawEvents.map((e) => ({
+      orderId: e.orderId,
+      eventType: e.eventType,
+      timestamp: e.timestamp,
+      data: e.metadata ? { raw: e.metadata } : undefined,
+    }))
+  } catch {
+    // DB not yet seeded — show empty state
+  }
 
-  // Fetch vendor count
-  const vendorCount = await prisma.vendor.count({ where: { businessId } })
-
-  // Fetch recent events from DynamoDB
-  const recentEvents = await getOrderEventsForBusiness(businessId)
-
-  // Transform data for client component
-  const orders = todayOrder
+  const orders: DisplayOrder[] = todayOrder
     ? [
         {
           id: todayOrder.id,
           businessId: todayOrder.businessId,
           status: todayOrder.status,
-          notes: todayOrder.notes,
+          notes: todayOrder.notes ?? null,
           date: todayOrder.date,
           createdAt: todayOrder.createdAt,
           vendorName: todayOrder.items[0]?.vendor.name || "Unknown",
@@ -78,7 +118,6 @@ export default async function DashboardPage() {
   const confirmedCount = todayOrder
     ? todayOrder.items.filter((oi: OrderItem) => oi.vendorStatus === "confirmed").length
     : 0
-
   const pendingCount = todayOrder
     ? todayOrder.items.filter((oi: OrderItem) => oi.vendorStatus === "pending").length
     : 0

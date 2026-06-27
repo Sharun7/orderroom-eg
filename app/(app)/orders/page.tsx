@@ -1,34 +1,50 @@
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { getOrdersWithItems } from "@/lib/db"
 import OrdersPageClient from "./page-client"
+import type { Order, OrderStatus } from "@/lib/db"
 
-export default async function OrdersPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.businessId) {
-    redirect("/login")
-  }
+type DemoOrder = Order & {
+  vendorName: string
+  vendorEmail: string
+  totalItems: number
+  sentAt?: string
+  confirmedAt?: string
+}
 
-  // Fetch all orders for the business
-  const orders = await getOrdersWithItems(session.user.businessId)
+const DEMO_ORDERS: DemoOrder[] = [
+  {
+    id: "o1", businessId: "b1", status: "confirmed" as OrderStatus, notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 7200000),
+    vendorName: "Fresh Farm Produce", vendorEmail: "orders@freshfarm.com", totalItems: 4,
+    sentAt: new Date(Date.now() - 7200000).toISOString(),
+    confirmedAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: "o2", businessId: "b1", status: "sent" as OrderStatus, notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 5400000),
+    vendorName: "Prime Cuts Meats", vendorEmail: "delivery@primecuts.com", totalItems: 3,
+    sentAt: new Date(Date.now() - 5400000).toISOString(),
+  },
+  {
+    id: "o3", businessId: "b1", status: "delivered" as OrderStatus, notes: null,
+    date: new Date(Date.now() - 86400000), createdAt: new Date(Date.now() - 86400000 - 14400000),
+    vendorName: "Golden Grain Bakery", vendorEmail: "wholesale@goldengrain.com", totalItems: 3,
+    sentAt: new Date(Date.now() - 86400000 - 14400000).toISOString(),
+    confirmedAt: new Date(Date.now() - 86400000 - 10800000).toISOString(),
+  },
+  {
+    id: "o4", businessId: "b1", status: "sent" as OrderStatus, notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 2700000),
+    vendorName: "Ocean Select Seafood", vendorEmail: "ops@oceanselect.com", totalItems: 2,
+    sentAt: new Date(Date.now() - 2700000).toISOString(),
+  },
+  {
+    id: "o5", businessId: "b1", status: "confirmed" as OrderStatus, notes: null,
+    date: new Date(Date.now() - 172800000), createdAt: new Date(Date.now() - 172800000),
+    vendorName: "Alpine Dairy Co.", vendorEmail: "orders@alpinedairy.com", totalItems: 1,
+    sentAt: new Date(Date.now() - 172800000).toISOString(),
+    confirmedAt: new Date(Date.now() - 172800000 + 3600000).toISOString(),
+  },
+]
 
-  // Transform for display
-  const displayOrders = orders.map((order) => ({
-    id: order.id,
-    businessId: order.businessId,
-    status: order.status,
-    notes: order.notes,
-    date: order.date,
-    createdAt: order.createdAt,
-    vendorName: order.items[0]?.vendor.name || "Multiple vendors",
-    vendorEmail: order.items[0]?.vendor.email || "",
-    totalItems: order.items.length,
-    sentAt: order.createdAt.toISOString(),
-    confirmedAt: order.items.some((item) => item.confirmedAt)
-      ? order.items.find((item) => item.confirmedAt)?.confirmedAt?.toISOString()
-      : undefined,
-  }))
-
-  return <OrdersPageClient initialOrders={displayOrders} />
+export default function OrdersPage() {
+  return <OrdersPageClient initialOrders={DEMO_ORDERS} />
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { TopBar } from "@/components/top-bar"
 import {
@@ -215,7 +215,7 @@ function PlanCard({
 // Page
 // ---------------------------------------------------------------------------
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams  = useSearchParams()
   const [toast, setToast] = useState<string | null>(null)
   const [loading, setLoading] = useState<PlanKey | null>(null)
@@ -415,5 +415,13 @@ export default function BillingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div>Loading billing...</div></div>}>
+      <BillingContent />
+    </Suspense>
   )
 }

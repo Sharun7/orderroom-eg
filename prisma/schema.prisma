@@ -1,0 +1,90 @@
+// Prisma schema for OrderRoom
+// Database: AWS Aurora PostgreSQL
+// Docs: https://www.prisma.io/docs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  type      String   // "restaurant" | "hotel" | "catering"
+  createdAt DateTime @default(now())
+
+  users   User[]
+  vendors Vendor[]
+  orders  Order[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  role         String   @default("owner") // "owner" | "manager" | "staff"
+  businessId   String
+  createdAt    DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id])
+}
+
+model Vendor {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  phone      String?
+  category   String   // "vegetables" | "meat" | "dairy" | "beverages" | "packaging" | "other"
+  businessId String
+  createdAt  DateTime @default(now())
+
+  business   Business    @relation(fields: [businessId], references: [id])
+  products   Product[]
+  orderItems OrderItem[]
+}
+
+model Product {
+  id         String @id @default(cuid())
+  name       String
+  unit       String // "kg" | "litre" | "piece" | "box" | "bag"
+  defaultQty Float  @default(1)
+  vendorId   String
+
+  vendor     Vendor      @relation(fields: [vendorId], references: [id])
+  orderItems OrderItem[]
+}
+
+model Order {
+  id         String   @id @default(cuid())
+  businessId String
+  date       DateTime @default(now())
+  status     String   @default("draft") // "draft" | "sent" | "partial" | "confirmed" | "delivered"
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  business Business    @relation(fields: [businessId], references: [id])
+  items    OrderItem[]
+}
+
+model OrderItem {
+  id           String    @id @default(cuid())
+  orderId      String
+  vendorId     String
+  productId    String
+  quantity     Float
+  unit         String
+  vendorStatus String    @default("pending") // "pending" | "confirmed" | "rejected"
+  confirmToken String    @unique @default(cuid())
+  confirmedAt  DateTime?
+  deliveredAt  DateTime?
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  vendor  Vendor  @relation(fields: [vendorId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}

@@ -3,48 +3,52 @@
 import { useState } from "react"
 import { TrendingUp, Users, ShoppingCart, CheckCircle, ArrowRight, Zap } from "lucide-react"
 import { TopBar } from "@/components/top-bar"
-import { OrderStatusBoard } from "@/components/order-status-board"
-import { MOCK_ORDERS } from "@/lib/db"
-import type { Order, OrderStatus } from "@/lib/db"
+import { OrderStatusBoard, type DisplayOrder as DemoOrder } from "@/components/order-status-board"
+import type { OrderStatus } from "@/lib/db"
 import Link from "next/link"
 
-const STAT_CARDS = [
+const SEED_ORDERS: DemoOrder[] = [
   {
-    label: "Active Vendors",
-    value: "5",
-    change: "+1 this week",
-    icon: Users,
-    iconColor: "text-[#60A5FA]",
-    iconBg: "bg-[rgba(59,130,246,0.12)]",
+    id: "o1", businessId: "b1", status: "confirmed", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 7200000),
+    vendorName: "Fresh Farm Produce", vendorEmail: "orders@freshfarm.com", totalItems: 4,
+    sentAt: new Date(Date.now() - 7200000).toISOString(),
+    confirmedAt: new Date(Date.now() - 3600000).toISOString(),
   },
   {
-    label: "Orders Today",
-    value: "5",
-    change: "2 pending",
-    icon: ShoppingCart,
-    iconColor: "text-[#F59E0B]",
-    iconBg: "bg-[rgba(245,158,11,0.12)]",
+    id: "o2", businessId: "b1", status: "sent", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 5400000),
+    vendorName: "Prime Cuts Meats", vendorEmail: "delivery@primecuts.com", totalItems: 3,
+    sentAt: new Date(Date.now() - 5400000).toISOString(),
   },
   {
-    label: "Confirmed",
-    value: "3",
-    change: "60% confirmation rate",
-    icon: CheckCircle,
-    iconColor: "text-[#34D399]",
-    iconBg: "bg-[rgba(16,185,129,0.12)]",
+    id: "o3", businessId: "b1", status: "delivered", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 14400000),
+    vendorName: "Golden Grain Bakery", vendorEmail: "wholesale@goldengrain.com", totalItems: 3,
+    sentAt: new Date(Date.now() - 14400000).toISOString(),
+    confirmedAt: new Date(Date.now() - 10800000).toISOString(),
   },
   {
-    label: "Avg. Order Time",
-    value: "52s",
-    change: "-8s vs last week",
-    icon: TrendingUp,
-    iconColor: "text-[#A78BFA]",
-    iconBg: "bg-[rgba(139,92,246,0.12)]",
+    id: "o4", businessId: "b1", status: "draft", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 1800000),
+    vendorName: "Ocean Select Seafood", vendorEmail: "ops@oceanselect.com", totalItems: 2,
+  },
+  {
+    id: "o5", businessId: "b1", status: "draft", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 900000),
+    vendorName: "ThermoStar Beverages", vendorEmail: "b2b@thermostar.com", totalItems: 2,
   },
 ]
 
+const STAT_CARDS = [
+  { label: "Active Vendors",  value: "5",  change: "+1 this week",          icon: Users,       iconColor: "text-[#60A5FA]", iconBg: "bg-[rgba(59,130,246,0.12)]" },
+  { label: "Orders Today",    value: "5",  change: "2 pending",             icon: ShoppingCart, iconColor: "text-[#F59E0B]", iconBg: "bg-[rgba(245,158,11,0.12)]" },
+  { label: "Confirmed",       value: "3",  change: "60% confirmation rate", icon: CheckCircle,  iconColor: "text-[#34D399]", iconBg: "bg-[rgba(16,185,129,0.12)]" },
+  { label: "Avg. Order Time", value: "52s", change: "-8s vs last week",     icon: TrendingUp,   iconColor: "text-[#A78BFA]", iconBg: "bg-[rgba(139,92,246,0.12)]" },
+]
+
 export default function DashboardPage() {
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS)
+  const [orders, setOrders] = useState<DemoOrder[]>(SEED_ORDERS)
 
   function handleSendOrder(orderId: string) {
     setOrders((prev) =>
@@ -56,7 +60,7 @@ export default function DashboardPage() {
     )
   }
 
-  const pendingCount = orders.filter((o) => o.status === "pending").length
+  const pendingCount = orders.filter((o) => o.status === "draft").length
 
   return (
     <div className="flex-1 flex flex-col">
@@ -90,7 +94,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <button
-              onClick={() => orders.filter((o) => o.status === "pending").forEach((o) => handleSendOrder(o.id))}
+              onClick={() => orders.filter((o) => o.status === "draft").forEach((o) => handleSendOrder(o.id))}
               className="flex items-center gap-2 h-8 px-4 bg-[#F59E0B] hover:bg-[#D97706] text-[#0F1B2D] text-xs font-semibold rounded-lg transition-colors"
             >
               Send all <ArrowRight className="w-3.5 h-3.5" />
@@ -103,10 +107,7 @@ export default function DashboardPage() {
           {STAT_CARDS.map((card) => {
             const Icon = card.icon
             return (
-              <div
-                key={card.label}
-                className="bg-[#162236] border border-[#1E3050] rounded-xl p-5 hover:border-[#2A4060] transition-colors"
-              >
+              <div key={card.label} className="bg-[#162236] border border-[#1E3050] rounded-xl p-5 hover:border-[#2A4060] transition-colors">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs text-[#64748B] font-medium">{card.label}</span>
                   <div className={`w-8 h-8 rounded-lg ${card.iconBg} flex items-center justify-center`}>
@@ -123,17 +124,17 @@ export default function DashboardPage() {
         {/* Main status board */}
         <OrderStatusBoard orders={orders} onSendOrder={handleSendOrder} />
 
-        {/* Recent activity */}
+        {/* Bottom panels */}
         <div className="grid grid-cols-3 gap-4">
           {/* Quick actions */}
           <div className="bg-[#162236] border border-[#1E3050] rounded-xl p-5">
             <h3 className="text-sm font-semibold text-[#F7F5F0] mb-4">Quick Actions</h3>
             <div className="space-y-2">
               {[
-                { label: "Add new vendor", href: "/vendors", color: "text-[#60A5FA]" },
-                { label: "Add products", href: "/products", color: "text-[#F59E0B]" },
-                { label: "Place order", href: "/orders/new", color: "text-[#34D399]" },
-                { label: "View all orders", href: "/orders", color: "text-[#A78BFA]" },
+                { label: "Add new vendor",  href: "/vendors",    color: "text-[#60A5FA]" },
+                { label: "Add products",    href: "/products",   color: "text-[#F59E0B]" },
+                { label: "Place order",     href: "/orders/new", color: "text-[#34D399]" },
+                { label: "View all orders", href: "/orders",     color: "text-[#A78BFA]" },
               ].map((item) => (
                 <Link
                   key={item.href}
@@ -152,10 +153,10 @@ export default function DashboardPage() {
             <h3 className="text-sm font-semibold text-[#F7F5F0] mb-4">Today&apos;s Summary</h3>
             <div className="space-y-3">
               {[
-                { label: "Total vendors contacted", value: orders.length, color: "text-[#F7F5F0]" },
-                { label: "Emails sent", value: orders.filter((o) => o.sentAt).length, color: "text-[#60A5FA]" },
-                { label: "Confirmations received", value: orders.filter((o) => o.confirmedAt).length, color: "text-[#34D399]" },
-                { label: "Deliveries completed", value: orders.filter((o) => o.status === "delivered").length, color: "text-[#A78BFA]" },
+                { label: "Total vendors contacted",   value: orders.length,                                            color: "text-[#F7F5F0]" },
+                { label: "Emails sent",               value: orders.filter((o) => o.sentAt).length,                    color: "text-[#60A5FA]" },
+                { label: "Confirmations received",    value: orders.filter((o) => o.confirmedAt).length,               color: "text-[#34D399]" },
+                { label: "Deliveries completed",      value: orders.filter((o) => o.status === "delivered").length,    color: "text-[#A78BFA]" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <span className="text-xs text-[#64748B]">{item.label}</span>

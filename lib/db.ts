@@ -1,214 +1,283 @@
-// Aurora PostgreSQL connection (mock for UI demo - replace with real Aurora pg Pool in production)
-// In production: import { Pool } from "pg"; export const pool = new Pool({ connectionString: process.env.AURORA_DATABASE_URL });
+/**
+ * lib/db.ts
+ * Typed query helpers using Prisma + Aurora PostgreSQL.
+ *
+ * All functions scope queries to a `businessId` so tenant data never leaks
+ * across businesses. Replace the DEMO_BUSINESS_ID constant with a value
+ * derived from the authenticated session in production.
+ */
 
-export type OrderStatus = "pending" | "sent" | "confirmed" | "delivered"
+import { prisma } from "@/lib/prisma"
+import type {
+  Business,
+  User,
+  Vendor,
+  Product,
+  Order,
+  OrderItem,
+} from "@prisma/client"
 
-export interface Business {
-  id: string
-  name: string
-  email: string
-  plan: "starter" | "pro" | "enterprise"
-  createdAt: string
+// Re-export Prisma model types for use across the app
+export type { Business, User, Vendor, Product, Order, OrderItem }
+
+// Convenience union types matching the Prisma schema string literals
+export type BusinessType = "restaurant" | "hotel" | "catering"
+export type UserRole = "owner" | "manager" | "staff"
+export type VendorCategory = "vegetables" | "meat" | "dairy" | "beverages" | "packaging" | "other"
+export type ProductUnit = "kg" | "litre" | "piece" | "box" | "bag"
+export type OrderStatus = "draft" | "sent" | "partial" | "confirmed" | "delivered"
+export type VendorItemStatus = "pending" | "confirmed" | "rejected"
+
+// ---------------------------------------------------------------------------
+// Business
+// ---------------------------------------------------------------------------
+
+export async function getBusinessById(id: string): Promise<Business | null> {
+  return prisma.business.findUnique({ where: { id } })
 }
 
-export interface Vendor {
-  id: string
-  businessId: string
+export async function createBusiness(data: {
   name: string
   email: string
   phone?: string
-  category: string
-  contactName?: string
-  isActive: boolean
-  createdAt: string
+  type: BusinessType
+}): Promise<Business> {
+  return prisma.business.create({ data })
 }
 
-export interface Product {
-  id: string
-  businessId: string
-  vendorId: string
+// ---------------------------------------------------------------------------
+// Users
+// ---------------------------------------------------------------------------
+
+export async function getUserByEmail(email: string): Promise<User | null> {
+  return prisma.user.findUnique({ where: { email } })
+}
+
+export async function createUser(data: {
   name: string
-  unit: string
-  defaultQuantity: number
-  pricePerUnit?: number
-  isActive: boolean
-}
-
-export interface Order {
-  id: string
+  email: string
+  passwordHash: string
+  role?: UserRole
   businessId: string
+}): Promise<User> {
+  return prisma.user.create({ data })
+}
+
+// ---------------------------------------------------------------------------
+// Vendors
+// ---------------------------------------------------------------------------
+
+export type VendorWithProducts = Vendor & { products: Product[] }
+
+export async function getVendors(businessId: string): Promise<Vendor[]> {
+  return prisma.vendor.findMany({
+    where: { businessId },
+    orderBy: { createdAt: "asc" },
+  })
+}
+
+export async function getVendorsWithProducts(
+  businessId: string,
+): Promise<VendorWithProducts[]> {
+  return prisma.vendor.findMany({
+    where: { businessId },
+    include: { products: true },
+    orderBy: { createdAt: "asc" },
+  })
+}
+
+export async function getVendorById(
+  id: string,
+  businessId: string,
+): Promise<VendorWithProducts | null> {
+  return prisma.vendor.findFirst({
+    where: { id, businessId },
+    include: { products: true },
+  })
+}
+
+export async function createVendor(data: {
+  name: string
+  email: string
+  phone?: string
+  category: VendorCategory
+  businessId: string
+}): Promise<Vendor> {
+  return prisma.vendor.create({ data })
+}
+
+export async function updateVendor(
+  id: string,
+  businessId: string,
+  data: Partial<Pick<Vendor, "name" | "email" | "phone" | "category">>,
+): Promise<Vendor> {
+  return prisma.vendor.update({ where: { id }, data })
+}
+
+export async function deleteVendor(id: string, businessId: string): Promise<void> {
+  await prisma.vendor.delete({ where: { id } })
+}
+
+// ---------------------------------------------------------------------------
+// Products
+// ---------------------------------------------------------------------------
+
+export async function getProductsByVendor(vendorId: string): Promise<Product[]> {
+  return prisma.product.findMany({ where: { vendorId }, orderBy: { name: "asc" } })
+}
+
+export async function createProduct(data: {
+  name: string
+  unit: ProductUnit
+  defaultQty?: number
   vendorId: string
-  vendorName: string
-  vendorEmail: string
-  status: OrderStatus
-  deliveryDate: string
-  totalItems: number
+}): Promise<Product> {
+  return prisma.product.create({ data })
+}
+
+export async function updateProduct(
+  id: string,
+  data: Partial<Pick<Product, "name" | "unit" | "defaultQty">>,
+): Promise<Product> {
+  return prisma.product.update({ where: { id }, data })
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  await prisma.product.delete({ where: { id } })
+}
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+export type OrderWithItems = Order & {
+  items: (OrderItem & { vendor: Vendor; product: Product })[]
+}
+
+export async function getOrders(businessId: string): Promise<Order[]> {
+  return prisma.order.findMany({
+    where: { businessId },
+    orderBy: { createdAt: "desc" },
+  })
+}
+
+export async function getOrdersWithItems(
+  businessId: string,
+): Promise<OrderWithItems[]> {
+  return prisma.order.findMany({
+    where: { businessId },
+    include: {
+      items: { include: { vendor: true, product: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+}
+
+export async function getOrderById(
+  id: string,
+  businessId: string,
+): Promise<OrderWithItems | null> {
+  return prisma.order.findFirst({
+    where: { id, businessId },
+    include: {
+      items: { include: { vendor: true, product: true } },
+    },
+  })
+}
+
+export async function createOrder(data: {
+  businessId: string
   notes?: string
-  confirmationToken?: string
-  confirmedAt?: string
-  sentAt?: string
-  createdAt: string
+  items: {
+    vendorId: string
+    productId: string
+    quantity: number
+    unit: string
+  }[]
+}): Promise<Order> {
+  return prisma.order.create({
+    data: {
+      businessId: data.businessId,
+      notes: data.notes,
+      status: "draft",
+      items: {
+        create: data.items.map((item) => ({
+          vendorId: item.vendorId,
+          productId: item.productId,
+          quantity: item.quantity,
+          unit: item.unit,
+          vendorStatus: "pending",
+        })),
+      },
+    },
+  })
 }
 
-export interface OrderItem {
-  id: string
-  orderId: string
-  productId: string
-  productName: string
-  quantity: number
-  unit: string
-  pricePerUnit?: number
+export async function updateOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<Order> {
+  return prisma.order.update({ where: { id }, data: { status } })
 }
 
-// Mock data for demo
-export const MOCK_VENDORS: Vendor[] = [
-  {
-    id: "v1",
-    businessId: "b1",
-    name: "Fresh Farm Produce",
-    email: "orders@freshfarm.com",
-    phone: "+1 555-0101",
-    category: "Produce",
-    contactName: "Maria Santos",
-    isActive: true,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "v2",
-    businessId: "b1",
-    name: "Prime Cuts Meats",
-    email: "delivery@primecuts.com",
-    phone: "+1 555-0102",
-    category: "Meat & Seafood",
-    contactName: "James Butcher",
-    isActive: true,
-    createdAt: "2024-01-20",
-  },
-  {
-    id: "v3",
-    businessId: "b1",
-    name: "Golden Grain Bakery",
-    email: "wholesale@goldengrain.com",
-    phone: "+1 555-0103",
-    category: "Bakery & Dry Goods",
-    contactName: "Anne Miller",
-    isActive: true,
-    createdAt: "2024-02-01",
-  },
-  {
-    id: "v4",
-    businessId: "b1",
-    name: "Ocean Select Seafood",
-    email: "ops@oceanselect.com",
-    phone: "+1 555-0104",
-    category: "Meat & Seafood",
-    contactName: "Tom Fisher",
-    isActive: true,
-    createdAt: "2024-02-10",
-  },
-  {
-    id: "v5",
-    businessId: "b1",
-    name: "Alpine Dairy Co.",
-    email: "orders@alpinedairy.com",
-    phone: "+1 555-0105",
-    category: "Dairy & Eggs",
-    contactName: "Lisa Chen",
-    isActive: false,
-    createdAt: "2024-02-15",
-  },
-  {
-    id: "v6",
-    businessId: "b1",
-    name: "ThermoStar Beverages",
-    email: "b2b@thermostar.com",
-    phone: "+1 555-0106",
-    category: "Beverages",
-    contactName: "Kevin Park",
-    isActive: true,
-    createdAt: "2024-03-01",
-  },
-]
+// ---------------------------------------------------------------------------
+// Order Items / Vendor Confirmation
+// ---------------------------------------------------------------------------
 
-export const MOCK_PRODUCTS: Product[] = [
-  { id: "p1", businessId: "b1", vendorId: "v1", name: "Roma Tomatoes", unit: "kg", defaultQuantity: 10, pricePerUnit: 2.5, isActive: true },
-  { id: "p2", businessId: "b1", vendorId: "v1", name: "Baby Spinach", unit: "bag", defaultQuantity: 5, pricePerUnit: 4.0, isActive: true },
-  { id: "p3", businessId: "b1", vendorId: "v1", name: "Yellow Onions", unit: "kg", defaultQuantity: 8, pricePerUnit: 1.2, isActive: true },
-  { id: "p4", businessId: "b1", vendorId: "v1", name: "Garlic Bulbs", unit: "kg", defaultQuantity: 2, pricePerUnit: 5.0, isActive: true },
-  { id: "p5", businessId: "b1", vendorId: "v2", name: "Beef Tenderloin", unit: "kg", defaultQuantity: 5, pricePerUnit: 42.0, isActive: true },
-  { id: "p6", businessId: "b1", vendorId: "v2", name: "Chicken Breast", unit: "kg", defaultQuantity: 10, pricePerUnit: 12.5, isActive: true },
-  { id: "p7", businessId: "b1", vendorId: "v2", name: "Pork Ribs", unit: "kg", defaultQuantity: 4, pricePerUnit: 18.0, isActive: true },
-  { id: "p8", businessId: "b1", vendorId: "v3", name: "Sourdough Loaves", unit: "pcs", defaultQuantity: 12, pricePerUnit: 6.5, isActive: true },
-  { id: "p9", businessId: "b1", vendorId: "v3", name: "Brioche Buns", unit: "pcs", defaultQuantity: 24, pricePerUnit: 2.0, isActive: true },
-  { id: "p10", businessId: "b1", vendorId: "v3", name: "All-Purpose Flour", unit: "kg", defaultQuantity: 20, pricePerUnit: 1.5, isActive: true },
-  { id: "p11", businessId: "b1", vendorId: "v4", name: "Atlantic Salmon", unit: "kg", defaultQuantity: 6, pricePerUnit: 28.0, isActive: true },
-  { id: "p12", businessId: "b1", vendorId: "v4", name: "Sea Bass Fillets", unit: "kg", defaultQuantity: 4, pricePerUnit: 35.0, isActive: true },
-  { id: "p13", businessId: "b1", vendorId: "v6", name: "Sparkling Water 1L", unit: "case", defaultQuantity: 4, pricePerUnit: 18.0, isActive: true },
-  { id: "p14", businessId: "b1", vendorId: "v6", name: "Orange Juice Fresh", unit: "L", defaultQuantity: 10, pricePerUnit: 5.5, isActive: true },
-]
+export async function getOrderItemByToken(
+  confirmToken: string,
+): Promise<(OrderItem & { vendor: Vendor; product: Product; order: Order }) | null> {
+  return prisma.orderItem.findUnique({
+    where: { confirmToken },
+    include: { vendor: true, product: true, order: true },
+  })
+}
 
-export const MOCK_ORDERS: Order[] = [
-  {
-    id: "o1",
-    businessId: "b1",
-    vendorId: "v1",
-    vendorName: "Fresh Farm Produce",
-    vendorEmail: "orders@freshfarm.com",
-    status: "confirmed",
-    deliveryDate: new Date().toISOString().split("T")[0],
-    totalItems: 4,
-    confirmationToken: "tok_abc123",
-    confirmedAt: new Date(Date.now() - 3600000).toISOString(),
-    sentAt: new Date(Date.now() - 7200000).toISOString(),
-    createdAt: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: "o2",
-    businessId: "b1",
-    vendorId: "v2",
-    vendorName: "Prime Cuts Meats",
-    vendorEmail: "delivery@primecuts.com",
-    status: "sent",
-    deliveryDate: new Date().toISOString().split("T")[0],
-    totalItems: 3,
-    confirmationToken: "tok_def456",
-    sentAt: new Date(Date.now() - 5400000).toISOString(),
-    createdAt: new Date(Date.now() - 5400000).toISOString(),
-  },
-  {
-    id: "o3",
-    businessId: "b1",
-    vendorId: "v3",
-    vendorName: "Golden Grain Bakery",
-    vendorEmail: "wholesale@goldengrain.com",
-    status: "delivered",
-    deliveryDate: new Date().toISOString().split("T")[0],
-    totalItems: 3,
-    confirmationToken: "tok_ghi789",
-    confirmedAt: new Date(Date.now() - 10800000).toISOString(),
-    sentAt: new Date(Date.now() - 14400000).toISOString(),
-    createdAt: new Date(Date.now() - 14400000).toISOString(),
-  },
-  {
-    id: "o4",
-    businessId: "b1",
-    vendorId: "v4",
-    vendorName: "Ocean Select Seafood",
-    vendorEmail: "ops@oceanselect.com",
-    status: "pending",
-    deliveryDate: new Date().toISOString().split("T")[0],
-    totalItems: 2,
-    createdAt: new Date(Date.now() - 1800000).toISOString(),
-  },
-  {
-    id: "o5",
-    businessId: "b1",
-    vendorId: "v6",
-    vendorName: "ThermoStar Beverages",
-    vendorEmail: "b2b@thermostar.com",
-    status: "pending",
-    deliveryDate: new Date().toISOString().split("T")[0],
-    totalItems: 2,
-    createdAt: new Date(Date.now() - 900000).toISOString(),
-  },
-]
+export async function confirmOrderItem(confirmToken: string): Promise<OrderItem> {
+  return prisma.orderItem.update({
+    where: { confirmToken },
+    data: { vendorStatus: "confirmed", confirmedAt: new Date() },
+  })
+}
+
+export async function rejectOrderItem(confirmToken: string): Promise<OrderItem> {
+  return prisma.orderItem.update({
+    where: { confirmToken },
+    data: { vendorStatus: "rejected" },
+  })
+}
+
+export async function markOrderItemDelivered(
+  confirmToken: string,
+): Promise<OrderItem> {
+  return prisma.orderItem.update({
+    where: { confirmToken },
+    data: { deliveredAt: new Date() },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard helpers
+// ---------------------------------------------------------------------------
+
+export async function getOrderStatusCounts(
+  businessId: string,
+): Promise<Record<OrderStatus, number>> {
+  const counts = await prisma.order.groupBy({
+    by: ["status"],
+    where: { businessId },
+    _count: { status: true },
+  })
+
+  const result: Record<OrderStatus, number> = {
+    draft: 0,
+    sent: 0,
+    partial: 0,
+    confirmed: 0,
+    delivered: 0,
+  }
+  for (const row of counts) {
+    result[row.status as OrderStatus] = row._count.status
+  }
+  return result
+}

@@ -6,19 +6,40 @@ import { StatusBadge } from "@/components/status-badge"
 import type { Order, OrderStatus } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
+// Extended type for demo / dashboard usage — real DB will JOIN on items
+export type DisplayOrder = Order & {
+  vendorName: string
+  vendorEmail: string
+  totalItems: number
+  sentAt?: string
+  confirmedAt?: string
+}
+
 interface OrderStatusBoardProps {
-  orders: Order[]
+  orders: DisplayOrder[]
   onSendOrder?: (orderId: string) => void
 }
 
-const STATUS_COUNTS = (orders: Order[]) => ({
-  pending: orders.filter((o) => o.status === "pending").length,
-  sent: orders.filter((o) => o.status === "sent").length,
-  confirmed: orders.filter((o) => o.status === "confirmed").length,
-  delivered: orders.filter((o) => o.status === "delivered").length,
-})
+function countByStatus(orders: DisplayOrder[]): Record<OrderStatus, number> {
+  return {
+    draft:     orders.filter((o) => o.status === "draft").length,
+    sent:      orders.filter((o) => o.status === "sent").length,
+    partial:   orders.filter((o) => o.status === "partial").length,
+    confirmed: orders.filter((o) => o.status === "confirmed").length,
+    delivered: orders.filter((o) => o.status === "delivered").length,
+  }
+}
 
-function OrderCard({ order, onSend }: { order: Order; onSend?: (id: string) => void }) {
+function formatRelativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
+function OrderCard({ order, onSend }: { order: DisplayOrder; onSend?: (id: string) => void }) {
   const [sending, setSending] = useState(false)
 
   async function handleSend() {
@@ -28,22 +49,20 @@ function OrderCard({ order, onSend }: { order: Order; onSend?: (id: string) => v
     onSend?.(order.id)
   }
 
+  const borderColor =
+    order.status === "confirmed" ? "border-[rgba(16,185,129,0.2)]"
+    : order.status === "delivered" ? "border-[rgba(139,92,246,0.2)]"
+    : order.status === "sent" ? "border-[rgba(59,130,246,0.2)]"
+    : "border-[#1E3050]"
+
   return (
-    <div
-      className={cn(
-        "bg-[#162236] border rounded-xl p-4 transition-all hover:border-[#2A4060] group",
-        order.status === "confirmed" && "border-[rgba(16,185,129,0.2)]",
-        order.status === "delivered" && "border-[rgba(139,92,246,0.2)]",
-        order.status === "sent" && "border-[rgba(59,130,246,0.2)]",
-        order.status === "pending" && "border-[#1E3050]",
-      )}
-    >
+    <div className={cn("bg-[#162236] border rounded-xl p-4 transition-all hover:border-[#2A4060] group", borderColor)}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-[#F7F5F0] truncate">{order.vendorName}</h3>
           <p className="text-xs text-[#64748B] mt-0.5 truncate">{order.vendorEmail}</p>
         </div>
-        <StatusBadge status={order.status} size="sm" />
+        <StatusBadge status={order.status as OrderStatus} size="sm" />
       </div>
 
       <div className="flex items-center gap-4 mb-4">
@@ -68,23 +87,20 @@ function OrderCard({ order, onSend }: { order: Order; onSend?: (id: string) => v
       {/* Progress bar */}
       <div className="mb-4">
         <div className="flex gap-1">
-          {(["pending", "sent", "confirmed", "delivered"] as OrderStatus[]).map((s, i) => {
-            const steps = ["pending", "sent", "confirmed", "delivered"]
-            const currentIndex = steps.indexOf(order.status)
-            const isCompleted = i <= currentIndex
+          {(["draft", "sent", "confirmed", "delivered"] as const).map((s, i) => {
+            const steps = ["draft", "sent", "confirmed", "delivered"]
+            const isCompleted = i <= steps.indexOf(order.status)
             const colors: Record<string, string> = {
-              pending: "bg-[#475569]",
-              sent: "bg-[#3B82F6]",
+              draft:     "bg-[#475569]",
+              sent:      "bg-[#3B82F6]",
+              partial:   "bg-[#F59E0B]",
               confirmed: "bg-[#10B981]",
               delivered: "bg-[#8B5CF6]",
             }
             return (
               <div
                 key={s}
-                className={cn(
-                  "h-1 flex-1 rounded-full transition-all",
-                  isCompleted ? colors[order.status] : "bg-[#1E3050]",
-                )}
+                className={cn("h-1 flex-1 rounded-full transition-all", isCompleted ? colors[order.status] : "bg-[#1E3050]")}
               />
             )
           })}
@@ -93,7 +109,7 @@ function OrderCard({ order, onSend }: { order: Order; onSend?: (id: string) => v
 
       {/* Actions */}
       <div className="flex items-center justify-between">
-        {order.status === "pending" ? (
+        {order.status === "draft" ? (
           <button
             onClick={handleSend}
             disabled={sending}
@@ -119,44 +135,15 @@ function OrderCard({ order, onSend }: { order: Order; onSend?: (id: string) => v
   )
 }
 
-function formatRelativeTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
-
 export function OrderStatusBoard({ orders, onSendOrder }: OrderStatusBoardProps) {
-  const counts = STATUS_COUNTS(orders)
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+  const counts = countByStatus(orders)
+  const today  = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
 
   const columns: { status: OrderStatus; label: string; icon: React.ReactNode; accent: string }[] = [
-    {
-      status: "pending",
-      label: "Pending",
-      icon: <Clock className="w-3.5 h-3.5 text-[#94A3B8]" />,
-      accent: "#475569",
-    },
-    {
-      status: "sent",
-      label: "Sent",
-      icon: <Send className="w-3.5 h-3.5 text-[#60A5FA]" />,
-      accent: "#3B82F6",
-    },
-    {
-      status: "confirmed",
-      label: "Confirmed",
-      icon: <CheckCircle2 className="w-3.5 h-3.5 text-[#34D399]" />,
-      accent: "#10B981",
-    },
-    {
-      status: "delivered",
-      label: "Delivered",
-      icon: <Package className="w-3.5 h-3.5 text-[#A78BFA]" />,
-      accent: "#8B5CF6",
-    },
+    { status: "draft",     label: "Draft",     icon: <Clock        className="w-3.5 h-3.5 text-[#94A3B8]" />, accent: "#475569" },
+    { status: "sent",      label: "Sent",      icon: <Send         className="w-3.5 h-3.5 text-[#60A5FA]" />, accent: "#3B82F6" },
+    { status: "confirmed", label: "Confirmed", icon: <CheckCircle2 className="w-3.5 h-3.5 text-[#34D399]" />, accent: "#10B981" },
+    { status: "delivered", label: "Delivered", icon: <Package      className="w-3.5 h-3.5 text-[#A78BFA]" />, accent: "#8B5CF6" },
   ]
 
   return (
@@ -189,7 +176,6 @@ export function OrderStatusBoard({ orders, onSendOrder }: OrderStatusBoardProps)
       <div className="grid grid-cols-4 divide-x divide-[#1E3050]">
         {columns.map(({ status, label, icon, accent }) => {
           const colOrders = orders.filter((o) => o.status === status)
-          const count = colOrders.length
           return (
             <div key={status} className="p-4">
               <div className="flex items-center justify-between mb-4">
@@ -199,12 +185,9 @@ export function OrderStatusBoard({ orders, onSendOrder }: OrderStatusBoardProps)
                 </div>
                 <span
                   className="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: `${accent}20`,
-                    color: accent,
-                  }}
+                  style={{ backgroundColor: `${accent}20`, color: accent }}
                 >
-                  {count}
+                  {colOrders.length}
                 </span>
               </div>
 
@@ -212,7 +195,7 @@ export function OrderStatusBoard({ orders, onSendOrder }: OrderStatusBoardProps)
                 {colOrders.map((order) => (
                   <OrderCard key={order.id} order={order} onSend={onSendOrder} />
                 ))}
-                {count === 0 && (
+                {colOrders.length === 0 && (
                   <div className="h-24 flex items-center justify-center rounded-xl border border-dashed border-[#1E3050] text-xs text-[#374151]">
                     No orders
                   </div>

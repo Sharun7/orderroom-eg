@@ -5,25 +5,66 @@ import { Plus, Send, Clock, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { TopBar } from "@/components/top-bar"
 import { StatusBadge } from "@/components/status-badge"
-import { MOCK_ORDERS, type Order } from "@/lib/db"
+import type { Order, OrderStatus } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
-function formatTime(iso?: string) {
-  if (!iso) return "—"
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+// Demo seed data — augmented with display-only fields
+type DemoOrder = Order & {
+  vendorName: string
+  vendorEmail: string
+  totalItems: number
+  sentAt?: string
+  confirmedAt?: string
+}
+
+const SEED_ORDERS: DemoOrder[] = [
+  {
+    id: "o1", businessId: "b1", status: "confirmed", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 7200000),
+    vendorName: "Fresh Farm Produce", vendorEmail: "orders@freshfarm.com", totalItems: 4,
+    sentAt: new Date(Date.now() - 7200000).toISOString(),
+    confirmedAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: "o2", businessId: "b1", status: "sent", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 5400000),
+    vendorName: "Prime Cuts Meats", vendorEmail: "delivery@primecuts.com", totalItems: 3,
+    sentAt: new Date(Date.now() - 5400000).toISOString(),
+  },
+  {
+    id: "o3", businessId: "b1", status: "delivered", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 14400000),
+    vendorName: "Golden Grain Bakery", vendorEmail: "wholesale@goldengrain.com", totalItems: 3,
+    sentAt: new Date(Date.now() - 14400000).toISOString(),
+    confirmedAt: new Date(Date.now() - 10800000).toISOString(),
+  },
+  {
+    id: "o4", businessId: "b1", status: "draft", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 1800000),
+    vendorName: "Ocean Select Seafood", vendorEmail: "ops@oceanselect.com", totalItems: 2,
+  },
+  {
+    id: "o5", businessId: "b1", status: "draft", notes: null,
+    date: new Date(), createdAt: new Date(Date.now() - 900000),
+    vendorName: "ThermoStar Beverages", vendorEmail: "b2b@thermostar.com", totalItems: 2,
+  },
+]
+
+function formatTime(value?: string | Date): string {
+  if (!value) return "—"
+  const d = typeof value === "string" ? new Date(value) : value
+  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
 }
 
 export default function OrdersPage() {
-  const [orders] = useState<Order[]>(MOCK_ORDERS)
+  const [orders] = useState<DemoOrder[]>(SEED_ORDERS)
+
   const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
   })
 
-  const pendingCount = orders.filter((o) => o.status === "pending").length
-  const sentCount = orders.filter((o) => o.status === "sent").length
+  const pendingCount   = orders.filter((o) => o.status === "draft").length
+  const sentCount      = orders.filter((o) => o.status === "sent").length
   const confirmedCount = orders.filter((o) => o.status === "confirmed").length
   const deliveredCount = orders.filter((o) => o.status === "delivered").length
 
@@ -47,8 +88,8 @@ export default function OrdersPage() {
         {/* Summary strip */}
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: "Pending", value: pendingCount, color: "text-[#94A3B8]", bg: "bg-[rgba(100,116,139,0.12)]" },
-            { label: "Sent", value: sentCount, color: "text-[#60A5FA]", bg: "bg-[rgba(59,130,246,0.12)]" },
+            { label: "Draft",     value: pendingCount,   color: "text-[#94A3B8]", bg: "bg-[rgba(100,116,139,0.12)]" },
+            { label: "Sent",      value: sentCount,      color: "text-[#60A5FA]", bg: "bg-[rgba(59,130,246,0.12)]" },
             { label: "Confirmed", value: confirmedCount, color: "text-[#34D399]", bg: "bg-[rgba(16,185,129,0.12)]" },
             { label: "Delivered", value: deliveredCount, color: "text-[#A78BFA]", bg: "bg-[rgba(139,92,246,0.12)]" },
           ].map((s) => (
@@ -94,7 +135,7 @@ export default function OrdersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <StatusBadge status={order.status} size="sm" />
+                    <StatusBadge status={order.status as OrderStatus} size="sm" />
                   </td>
                   <td className="px-4 py-4">
                     <span className="text-sm text-[#94A3B8]">{order.totalItems} items</span>

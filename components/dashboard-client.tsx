@@ -38,8 +38,7 @@ export default function DashboardClient({
   const [orderList] = useState<DisplayOrder[]>(orders)
 
   function handleSendOrder() {
-    // This would trigger an API call to send the order
-    console.log("[v0] Send order clicked")
+    // Placeholder for order send action
   }
 
   return (

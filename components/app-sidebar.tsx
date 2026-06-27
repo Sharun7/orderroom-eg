@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -35,6 +35,7 @@ const BOTTOM_ITEMS = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-60 flex flex-col border-r border-[#1E3050] sidebar-gradient z-40">
@@ -95,7 +96,10 @@ export function AppSidebar() {
             {label}
           </Link>
         ))}
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-[#94A3B8] hover:bg-[rgba(239,68,68,0.1)] hover:text-[#EF4444] transition-colors">
+        <button
+          onClick={() => router.push("/login")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-[#94A3B8] hover:bg-[rgba(239,68,68,0.1)] hover:text-[#EF4444] transition-colors"
+        >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           Sign out
         </button>

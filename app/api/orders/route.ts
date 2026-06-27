@@ -1,24 +1,54 @@
 /**
- * POST /api/orders
- * Creates a new order in Aurora PostgreSQL, then emits ORDER_CREATED
- * to the DynamoDB order_events table for each distinct vendor.
+ * GET  /api/orders — list all orders for the session business
+ * POST /api/orders — create a new order + log ORDER_CREATED to DynamoDB
  */
 import { NextRequest, NextResponse } from "next/server"
-import { createOrder } from "@/lib/db"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getOrdersWithItems, createOrder } from "@/lib/db"
 import { logOrderCreated } from "@/lib/dynamo"
+
+// ---------------------------------------------------------------------------
+// GET
+// ---------------------------------------------------------------------------
+
+export async function GET(_req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.businessId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const orders = await getOrdersWithItems(session.user.businessId)
+    return NextResponse.json({ orders })
+  } catch (err) {
+    console.error("[api/orders GET]", err)
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST
+// ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.businessId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await req.json()
-    const { businessId, notes, items } = body as {
-      businessId: string
+    const { notes, items } = body as {
       notes?: string
       items: { vendorId: string; productId: string; quantity: number; unit: string }[]
     }
 
-    if (!businessId || !items?.length) {
-      return NextResponse.json({ error: "businessId and items are required" }, { status: 400 })
+    if (!items?.length) {
+      return NextResponse.json({ error: "items are required" }, { status: 400 })
     }
+
+    const businessId = session.user.businessId
 
     // Write to Aurora PostgreSQL
     const order = await createOrder({ businessId, notes, items })
@@ -27,8 +57,8 @@ export async function POST(req: NextRequest) {
     const vendorIds = [...new Set(items.map((i) => i.vendorId))]
     await Promise.all(
       vendorIds.map((vendorId) =>
-        logOrderCreated({ orderId: order.id, vendorId, businessId, notes })
-      )
+        logOrderCreated({ orderId: order.id, vendorId, businessId, notes }),
+      ),
     )
 
     return NextResponse.json({ order }, { status: 201 })

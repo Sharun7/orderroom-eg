@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { useParams } from "next/navigation"
-import { ArrowLeft, Send, CheckCircle2, Package, Clock, ExternalLink, Copy } from "lucide-react"
+import { ArrowLeft, Send, CheckCircle2, Package, ExternalLink, Copy } from "lucide-react"
 import Link from "next/link"
 import { TopBar } from "@/components/top-bar"
 import { StatusBadge } from "@/components/status-badge"
+import { EventLog } from "@/components/event-log"
 import type { DisplayOrder } from "@/components/order-status-board"
 import type { OrderStatus } from "@/lib/db"
 import { cn } from "@/lib/utils"
@@ -41,10 +42,6 @@ const DEMO_ITEMS = [
   { id: "i3", name: "Pork Ribs",        quantity: 4,  unit: "kg" },
 ]
 
-const DEMO_EVENTS = [
-  { time: "06:14 AM", label: "Order created",                          color: "bg-[#374151]" },
-  { time: "06:15 AM", label: "Email sent to delivery@primecuts.com",   color: "bg-[#3B82F6]" },
-]
 
 export default function OrderDetailPage() {
   const params  = useParams()
@@ -158,32 +155,8 @@ export default function OrderDetailPage() {
               </table>
             </div>
 
-            {/* Event timeline */}
-            <div className="bg-[#162236] border border-[#1E3050] rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-[#F7F5F0] mb-4">Activity Log</h3>
-              <div className="space-y-4">
-                {DEMO_EVENTS.map((event, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", event.color)} />
-                    <div className="flex-1">
-                      <p className="text-sm text-[#94A3B8]">{event.label}</p>
-                      <p className="text-xs text-[#374151] mt-0.5">{event.time}</p>
-                    </div>
-                  </div>
-                ))}
-                {order.confirmedAt && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-[#10B981]" />
-                    <div>
-                      <p className="text-sm text-[#94A3B8]">Vendor confirmed the order</p>
-                      <p className="text-xs text-[#374151] mt-0.5">
-                        {new Date(order.confirmedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* DynamoDB Event Log */}
+            <EventLog orderId={order.id} pollInterval={15000} />
           </div>
 
           {/* Right: actions panel */}

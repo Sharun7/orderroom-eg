@@ -17,6 +17,12 @@ type DemoOrder = Order & {
   confirmedAt?: string
 }
 
+function formatTime(value?: string | Date): string {
+  if (!value) return "—"
+  const d = typeof value === "string" ? new Date(value) : value
+  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+}
+
 export default function OrdersPageClient({
   initialOrders,
 }: {

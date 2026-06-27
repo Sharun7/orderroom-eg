@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import { prisma } from "@/lib/prisma"
-import { createSessionToken } from "@/lib/auth"
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { prisma } = require("@/lib/prisma") as any
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,26 +34,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create session token
-    const sessionToken = createSessionToken(user.id, user.businessId)
-
-    // Set secure HTTP-only cookie
-    const response = NextResponse.json(
-      { success: true, sessionToken },
+    // Return success — login will be handled by NextAuth
+    return NextResponse.json(
+      { success: true, userId: user.id },
       { status: 200 }
     )
-
-    response.cookies.set({
-      name: "next-auth.session-token",
-      value: sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-    })
-
-    return response
   } catch (error) {
     console.error("[api/auth/login] Error:", error)
     return NextResponse.json(

@@ -154,15 +154,6 @@ function ConfirmPageInner({ token, vendorName, businessName, items, deliveryDate
           </div>
 
           {/* Notes */}
-          {order.notes && (
-            <div className="px-6 py-4 border-b border-[#1E3050] flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-[#F59E0B] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-[#F59E0B] mb-1">Note from buyer</p>
-                <p className="text-sm text-[#94A3B8] leading-relaxed">{order.notes}</p>
-              </div>
-            </div>
-          )}
 
           {/* Action buttons */}
           <div className="px-6 py-5 space-y-3">
@@ -214,9 +205,4 @@ function ConfirmPageInner({ token, vendorName, businessName, items, deliveryDate
       </div>
     </div>
   )
-}
-
-export default function ConfirmPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params)
-  return <ConfirmPageInner token={token} />
 }

@@ -14,6 +14,7 @@ import {
   ChevronDown,
   CreditCard,
   Network,
+  BookOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
 
 const BOTTOM_ITEMS = [
   { href: "/billing",      label: "Billing",      icon: CreditCard },
+  { href: "/blog",         label: "Blog Post",    icon: BookOpen   },
   { href: "/architecture", label: "Architecture", icon: Network    },
   { href: "/settings",     label: "Settings",     icon: Settings   },
 ]

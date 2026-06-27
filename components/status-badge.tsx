@@ -8,8 +8,8 @@ interface StatusBadgeProps {
 }
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string; dot: string }> = {
-  pending: {
-    label: "Pending",
+  draft: {
+    label: "Draft",
     className: "bg-[rgba(100,116,139,0.15)] text-[#94A3B8] border border-[rgba(100,116,139,0.3)]",
     dot: "bg-[#94A3B8]",
   },
@@ -17,6 +17,11 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string; dot
     label: "Sent",
     className: "bg-[rgba(59,130,246,0.15)] text-[#60A5FA] border border-[rgba(59,130,246,0.3)]",
     dot: "bg-[#60A5FA]",
+  },
+  partial: {
+    label: "Partial",
+    className: "bg-[rgba(245,158,11,0.15)] text-[#F59E0B] border border-[rgba(245,158,11,0.3)]",
+    dot: "bg-[#F59E0B]",
   },
   confirmed: {
     label: "Confirmed",

@@ -31,16 +31,32 @@ function LandingNav() {
 }
 
 function Hero() {
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    setMousePos({ x: x * 10, y: y * 10 })
+  }
+
   return (
-    <section className="pt-36 pb-24 px-6">
-      <div className="max-w-4xl mx-auto text-center">
+    <section className="relative pt-36 pb-24 px-6 overflow-hidden">
+      {/* Animated background orbs */}
+      <div className="animated-orbs absolute inset-0">
+        <div className="orb orb-amber" style={{ width: "400px", height: "400px", top: "-100px", left: "-100px" }} />
+        <div className="orb orb-blue" style={{ width: "500px", height: "500px", top: "200px", right: "-150px" }} />
+        <div className="orb orb-purple" style={{ width: "350px", height: "350px", bottom: "-100px", left: "300px" }} />
+      </div>
+
+      <div className="max-w-4xl mx-auto text-center relative z-10">
         <div className="inline-flex items-center gap-2 bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-full px-4 py-1.5 mb-8">
           <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse" />
           <span className="text-xs font-medium text-[#F59E0B]">Built for restaurants, hotels &amp; catering</span>
         </div>
-        <h1 className="font-display text-5xl md:text-6xl text-[#F7F5F0] leading-tight text-balance mb-6">
+        <h1 className="font-display text-6xl md:text-7xl text-[#F7F5F0] leading-tight text-balance mb-6 font-bold">
           Your morning vendor orders.{" "}
-          <span className="text-[#F59E0B]">Done in 60 seconds.</span>
+          <span className="gradient-text-animated">Done in 60 seconds.</span>
         </h1>
         <p className="text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed text-pretty mb-10">
           Stop juggling 20 WhatsApp chats every morning. OrderRoom lets you place all your daily supply orders in one form — vendors confirm by clicking a link in their email. No app, no signup, no chaos.
@@ -55,9 +71,15 @@ function Hero() {
         </div>
         <p className="text-xs text-[#374151]">No credit card required. Free for up to 1 vendor.</p>
 
-        {/* Dashboard preview */}
-        <div className="mt-16">
-          <div className="bg-[#0D1825] border border-[#1E3050] rounded-2xl overflow-hidden shadow-2xl text-left">
+        {/* Dashboard preview with 3D effect */}
+        <div className="mt-16" onMouseMove={handleMouseMove}>
+          <div 
+            className="bg-[#0D1825] border border-[#1E3050] rounded-2xl overflow-hidden shadow-2xl text-left float-3d" 
+            style={{
+              transform: `perspective(1000px) rotateX(${mousePos.y}deg) rotateY(${mousePos.x}deg)`,
+              transition: "transform 0.1s ease-out",
+            }}
+          >
             <div className="flex items-center gap-2 px-4 py-3 border-b border-[#1E3050]">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-[rgba(239,68,68,0.5)]" />
@@ -157,7 +179,7 @@ function ProblemSection() {
           {cards.map((card) => {
             const Icon = card.icon
             return (
-              <div key={card.title} className="bg-[#162236] border border-[#1E3050] rounded-xl p-6 relative overflow-hidden">
+              <div key={card.title} className="glass rounded-xl p-6 relative overflow-hidden group hover:border-[#2A4060] transition-all duration-300 hover:-translate-y-1">
                 <div className={`absolute top-0 left-0 right-0 h-px ${card.accent}`} />
                 <div className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center mb-4`}>
                   <Icon className={`w-5 h-5 ${card.iconColor}`} />
@@ -211,7 +233,7 @@ function SolutionSection() {
           {cards.map((card) => {
             const Icon = card.icon
             return (
-              <div key={card.title} className="bg-[#162236] border border-[#1E3050] rounded-xl p-6 relative overflow-hidden">
+              <div key={card.title} className="glass rounded-xl p-6 relative overflow-hidden group hover:border-[#2A4060] transition-all duration-300 hover:-translate-y-1">
                 <div className={`absolute top-0 left-0 right-0 h-px ${card.accent}`} />
                 <div className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center mb-4`}>
                   <Icon className={`w-5 h-5 ${card.iconColor}`} />

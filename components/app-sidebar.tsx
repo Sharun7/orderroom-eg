@@ -37,7 +37,7 @@ export function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-60 flex flex-col border-r border-[#1E3050] bg-[#0D1825] z-40">
+    <aside className="fixed left-0 top-0 h-screen w-60 flex flex-col border-r border-[#1E3050] sidebar-gradient z-40">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-[#1E3050]">
         <div className="w-8 h-8 rounded-lg bg-[#F59E0B] flex items-center justify-center flex-shrink-0">

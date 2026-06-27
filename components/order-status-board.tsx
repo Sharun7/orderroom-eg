@@ -49,14 +49,16 @@ function OrderCard({ order, onSend }: { order: DisplayOrder; onSend?: (id: strin
     onSend?.(order.id)
   }
 
-  const borderColor =
-    order.status === "confirmed" ? "border-[rgba(16,185,129,0.2)]"
-    : order.status === "delivered" ? "border-[rgba(139,92,246,0.2)]"
-    : order.status === "sent" ? "border-[rgba(59,130,246,0.2)]"
-    : "border-[#1E3050]"
+  const borderAccent =
+    order.status === "confirmed" ? "border-left-accent-confirmed"
+    : order.status === "sent" ? "border-left-accent-sent"
+    : order.status === "rejected" ? "border-left-accent-rejected"
+    : "border-left-accent-pending"
+
+  const statusPulse = order.status === "sent" ? "status-pending-pulse" : ""
 
   return (
-    <div className={cn("bg-[#162236] border rounded-xl p-4 transition-all hover:border-[#2A4060] group", borderColor)}>
+    <div className={cn("bg-[#162236] border rounded-xl p-4 transition-all hover:border-[#2A4060] group", borderAccent, statusPulse)}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-[#F7F5F0] truncate">{order.vendorName}</h3>

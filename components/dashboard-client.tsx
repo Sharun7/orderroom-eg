@@ -58,7 +58,28 @@ export default function DashboardClient({
         }
       />
 
-      <div className="flex-1 p-6 space-y-6 fade-in">
+      <div className="top-accent-line flex-1 p-6 space-y-6 fade-in">
+        {/* Stat cards grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {statCards.map((card) => {
+            const Icon = card.icon
+            return (
+              <div key={card.label} className="stat-card-glow bg-[#162236] border border-[#1E3050] rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-8 h-8 rounded-lg ${card.iconBg} flex items-center justify-center`}>
+                    <Icon className={`w-4 h-4 ${card.iconColor}`} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-[#64748B] mb-1">{card.label}</p>
+                  <p className="text-2xl font-bold text-[#F7F5F0] count-up font-variant-numeric: tabular-nums">{card.value}</p>
+                  <p className="text-xs text-[#64748B] mt-1">{card.change}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
         {/* Quick action banner */}
         {pendingCount > 0 && (
           <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] rounded-xl px-5 py-4 flex items-center justify-between">

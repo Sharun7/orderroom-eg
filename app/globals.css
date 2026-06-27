@@ -187,6 +187,212 @@
       transform: translateY(0);
     }
   }
+
+  /* Premium design effects */
+
+  /* Animated gradient orbs background */
+  .animated-orbs {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.15;
+  }
+
+  .orb-amber {
+    background: #F59E0B;
+    animation: float 20s infinite ease-in-out;
+  }
+
+  .orb-blue {
+    background: #3B82F6;
+    animation: float 25s infinite ease-in-out 2s;
+  }
+
+  .orb-purple {
+    background: #8B5CF6;
+    animation: float 30s infinite ease-in-out 4s;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translate(0, 0);
+    }
+    33% {
+      transform: translate(30px, -30px);
+    }
+    66% {
+      transform: translate(-20px, 20px);
+    }
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    background: rgba(22, 34, 54, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(30, 48, 80, 0.5);
+  }
+
+  /* Stat card glow on hover */
+  .stat-card-glow {
+    transition: all 0.3s ease;
+  }
+
+  .stat-card-glow:hover {
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Status pulse animation */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(100, 116, 139, 0.3), inset 0 0 10px rgba(100, 116, 139, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(100, 116, 139, 0.5), inset 0 0 15px rgba(100, 116, 139, 0.2);
+    }
+  }
+
+  .status-pending-pulse {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* 3D card perspective */
+  .perspective-card {
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+    transform-style: preserve-3d;
+  }
+
+  .perspective-card:hover {
+    transform: translateZ(10px) rotateX(-5deg) rotateY(5deg);
+  }
+
+  /* Gradient text animation */
+  .gradient-text-animated {
+    background: linear-gradient(90deg, #F59E0B, #F97316, #F59E0B);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% center;
+    }
+    50% {
+      background-position: 100% center;
+    }
+    100% {
+      background-position: 0% center;
+    }
+  }
+
+  /* Subtle grid background */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(30, 48, 80, 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 48, 80, 0.3) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Number counter animation */
+  @keyframes count-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .count-up {
+    animation: count-up 0.6s ease-out forwards;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Left border accent for status cards */
+  .border-left-accent-confirmed {
+    border-left: 4px solid #10B981;
+  }
+
+  .border-left-accent-sent {
+    border-left: 4px solid #3B82F6;
+  }
+
+  .border-left-accent-pending {
+    border-left: 4px solid #64748B;
+  }
+
+  .border-left-accent-rejected {
+    border-left: 4px solid #EF4444;
+  }
+
+  /* Top accent line (like a loading bar) */
+  .top-accent-line {
+    position: relative;
+    padding-top: 3px;
+  }
+
+  .top-accent-line::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #F59E0B, transparent);
+  }
+
+  /* Sidebar gradient */
+  .sidebar-gradient {
+    background: linear-gradient(180deg, #0F1B2D 0%, #1A2A42 100%);
+  }
+
+  /* Draw line animation for step connectors */
+  @keyframes draw-line {
+    from {
+      stroke-dashoffset: 1000;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .draw-line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: draw-line 1.5s ease-out forwards;
+  }
+
+  /* 3D floating dashboard effect */
+  @keyframes float-3d {
+    0%, 100% {
+      transform: translateZ(0) rotateX(0deg) rotateY(0deg);
+    }
+    50% {
+      transform: translateZ(20px) rotateX(2deg) rotateY(2deg);
+    }
+  }
+
+  .float-3d {
+    animation: float-3d 6s ease-in-out infinite;
+    transform-style: preserve-3d;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

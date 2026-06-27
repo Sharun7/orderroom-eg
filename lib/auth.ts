@@ -41,6 +41,17 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
+        // Demo mode: Accept demo credentials
+        if (credentials.email === "demo@orderroom.io" && credentials.password === "demo1234") {
+          return {
+            id: "demo-user-id",
+            name: "Alex Rivera",
+            email: "demo@orderroom.io",
+            businessId: "demo-business-id",
+            role: "owner",
+          }
+        }
+
         try {
           const user = await getUserByEmail(credentials.email)
           if (!user || !user.passwordHash) return null

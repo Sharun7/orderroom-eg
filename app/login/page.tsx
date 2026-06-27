@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react"
 
@@ -19,15 +20,14 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || "Login failed. Please try again.")
+      if (!result?.ok || result?.error) {
+        setError(result?.error || "Login failed. Please try again.")
         setLoading(false)
         return
       }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { TrendingUp, Users, ShoppingCart, CheckCircle, ArrowRight, Zap } from "lucide-react"
+import { TrendingUp, Users, ShoppingCart, CheckCircle, ArrowRight, Zap, Clock, Send, RefreshCw, Package, ClipboardList } from "lucide-react"
 import { TopBar } from "@/components/top-bar"
 import { OrderStatusBoard, type DisplayOrder as DemoOrder } from "@/components/order-status-board"
 import type { OrderStatus } from "@/lib/db"
@@ -129,22 +129,24 @@ export default function DashboardPage() {
           {/* Quick actions */}
           <div className="bg-[#162236] border border-[#1E3050] rounded-xl p-5">
             <h3 className="text-sm font-semibold text-[#F7F5F0] mb-4">Quick Actions</h3>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {[
-                { label: "Add new vendor",  href: "/vendors",    color: "text-[#60A5FA]" },
-                { label: "Add products",    href: "/products",   color: "text-[#F59E0B]" },
-                { label: "Place order",     href: "/orders/new", color: "text-[#34D399]" },
-                { label: "View all orders", href: "/orders",     color: "text-[#A78BFA]" },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center justify-between py-2 border-b border-[#1E3050] last:border-0 group"
-                >
-                  <span className={`text-sm ${item.color} group-hover:underline`}>{item.label}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#374151] group-hover:text-[#64748B] transition-colors" />
-                </Link>
-              ))}
+                { label: "New daily order",  href: "/orders/new", icon: Zap,         color: "text-[#F59E0B]", bg: "bg-[rgba(245,158,11,0.1)]" },
+                { label: "Manage vendors",   href: "/vendors",    icon: Users,        color: "text-[#60A5FA]", bg: "bg-[rgba(59,130,246,0.1)]" },
+                { label: "View all orders",  href: "/orders",     icon: ClipboardList,color: "text-[#34D399]", bg: "bg-[rgba(16,185,129,0.1)]" },
+                { label: "Browse products",  href: "/products",   icon: Package,      color: "text-[#A78BFA]", bg: "bg-[rgba(139,92,246,0.1)]" },
+              ].map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link key={item.href} href={item.href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#1E2F45] group transition-colors">
+                    <div className={`w-7 h-7 rounded-md ${item.bg} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-3.5 h-3.5 ${item.color}`} />
+                    </div>
+                    <span className="text-sm text-[#94A3B8] group-hover:text-[#F7F5F0] transition-colors">{item.label}</span>
+                    <ArrowRight className="w-3 h-3 text-[#374151] group-hover:text-[#64748B] ml-auto transition-colors" />
+                  </Link>
+                )
+              })}
             </div>
           </div>
 

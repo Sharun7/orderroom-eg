@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { CheckCircle2, Package, Calendar, Zap, XCircle, Clock, AlertCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { use, useState } from "react"
+import { CheckCircle2, Package, Calendar, Zap, XCircle, AlertCircle } from "lucide-react"
 
 const MOCK_ORDER = {
   id: "o2",
@@ -17,7 +16,7 @@ const MOCK_ORDER = {
   notes: "Please deliver between 6–8am, use side entrance.",
 }
 
-export default function ConfirmPage({ params }: { params: { token: string } }) {
+function ConfirmPageInner({ token }: { token: string }) {
   const [status, setStatus] = useState<"pending" | "confirming" | "confirmed" | "declined">("pending")
   const [declineReason, setDeclineReason] = useState("")
   const [showDeclineForm, setShowDeclineForm] = useState(false)
@@ -112,7 +111,7 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
               </div>
               <div className="bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-1.5 text-right flex-shrink-0">
                 <p className="text-[10px] text-[#64748B]">Ref</p>
-                <p className="text-xs font-mono text-[#F59E0B]">{params.token.slice(0, 8).toUpperCase()}</p>
+                <p className="text-xs font-mono text-[#F59E0B]">{token.slice(0, 8).toUpperCase()}</p>
               </div>
             </div>
           </div>
@@ -210,4 +209,9 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
       </div>
     </div>
   )
+}
+
+export default function ConfirmPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = use(params)
+  return <ConfirmPageInner token={token} />
 }

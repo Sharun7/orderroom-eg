@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react"
 
 export default function LoginPage() {
@@ -19,22 +20,28 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || "Login failed. Please try again.")
+      if (!result) {
+        setError("Login failed. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      if (result.error) {
+        setError("Invalid email or password.")
         setLoading(false)
         return
       }
 
       // Login successful - redirect to dashboard
       router.push("/dashboard")
-    } catch (err) {
+      router.refresh()
+    } catch {
       setError("Network error. Please try again.")
       setLoading(false)
     }
@@ -151,7 +158,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="•���••••••"
                   required
                   className="w-full h-10 px-3.5 pr-10 rounded-lg bg-[#162236] border border-[#1E3050] text-[#F7F5F0] text-sm placeholder-[#374151] focus:outline-none focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-colors"
                 />

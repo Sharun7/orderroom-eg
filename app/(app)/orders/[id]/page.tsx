@@ -14,20 +14,20 @@ import { cn } from "@/lib/utils"
 // Demo seed data — matches the DisplayOrder (Prisma Order + display fields)
 const SEED_ORDERS: DisplayOrder[] = [
   {
-    id: "o1", businessId: "b1", status: "confirmed", notes: null,
+    id: "o1", businessId: "b1", status: "confirmed", notes: undefined,
     date: new Date(), createdAt: new Date(Date.now() - 7200000),
     vendorName: "Fresh Farm Produce", vendorEmail: "orders@freshfarm.com", totalItems: 4,
     sentAt: new Date(Date.now() - 7200000).toISOString(),
     confirmedAt: new Date(Date.now() - 3600000).toISOString(),
   },
   {
-    id: "o2", businessId: "b1", status: "sent", notes: null,
+    id: "o2", businessId: "b1", status: "sent", notes: undefined,
     date: new Date(), createdAt: new Date(Date.now() - 5400000),
     vendorName: "Prime Cuts Meats", vendorEmail: "delivery@primecuts.com", totalItems: 3,
     sentAt: new Date(Date.now() - 5400000).toISOString(),
   },
   {
-    id: "o3", businessId: "b1", status: "delivered", notes: null,
+    id: "o3", businessId: "b1", status: "delivered", notes: undefined,
     date: new Date(), createdAt: new Date(Date.now() - 14400000),
     vendorName: "Golden Grain Bakery", vendorEmail: "wholesale@goldengrain.com", totalItems: 3,
     sentAt: new Date(Date.now() - 14400000).toISOString(),

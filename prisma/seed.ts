@@ -5,13 +5,16 @@
  */
 
 import { PrismaPg } from "@prisma/adapter-pg"
-import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { PrismaClient } = require("@prisma/client") as any
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
 })
-const prisma = new PrismaClient({ adapter })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prisma = new PrismaClient({ adapter }) as any
 
 async function main() {
   console.log("Seeding database…")
@@ -154,9 +157,166 @@ async function main() {
     })
   }
 
+  // ------------------------------------------------------------------
+  // Today's Order with mixed statuses
+  // ------------------------------------------------------------------
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const order = await prisma.order.upsert({
+    where: { id: "seed-order-today" },
+    update: {},
+    create: {
+      id: "seed-order-today",
+      businessId: business.id,
+      date: today,
+      status: "partial",
+      notes: "Morning service prep",
+    },
+  })
+
+  // Create order items with different statuses
+  await Promise.all([
+    // Fresh Farm Produce → Confirmed
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi1" },
+      update: {},
+      create: {
+        id: "seed-oi1",
+        orderId: order.id,
+        vendorId: freshFarm.id,
+        productId: "seed-p1", // Roma Tomatoes
+        quantity: 20,
+        unit: "kg",
+        vendorStatus: "confirmed",
+        confirmedAt: new Date(Date.now() - 3600000),
+      },
+    }),
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi2" },
+      update: {},
+      create: {
+        id: "seed-oi2",
+        orderId: order.id,
+        vendorId: freshFarm.id,
+        productId: "seed-p2", // Baby Spinach
+        quantity: 3,
+        unit: "bag",
+        vendorStatus: "confirmed",
+        confirmedAt: new Date(Date.now() - 3600000),
+      },
+    }),
+
+    // Prime Cuts Meats → Sent (pending vendor response)
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi3" },
+      update: {},
+      create: {
+        id: "seed-oi3",
+        orderId: order.id,
+        vendorId: primeCuts.id,
+        productId: "seed-p5", // Beef Tenderloin
+        quantity: 8,
+        unit: "kg",
+        vendorStatus: "pending",
+      },
+    }),
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi4" },
+      update: {},
+      create: {
+        id: "seed-oi4",
+        orderId: order.id,
+        vendorId: primeCuts.id,
+        productId: "seed-p6", // Chicken Breast
+        quantity: 15,
+        unit: "kg",
+        vendorStatus: "pending",
+      },
+    }),
+
+    // Ocean Select Seafood → Pending
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi5" },
+      update: {},
+      create: {
+        id: "seed-oi5",
+        orderId: order.id,
+        vendorId: oceanSelect.id,
+        productId: "seed-p11", // Atlantic Salmon
+        quantity: 5,
+        unit: "kg",
+        vendorStatus: "pending",
+      },
+    }),
+
+    // ThermoStar Beverages → Confirmed
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi6" },
+      update: {},
+      create: {
+        id: "seed-oi6",
+        orderId: order.id,
+        vendorId: thermoStar.id,
+        productId: "seed-p14", // Sparkling Water
+        quantity: 8,
+        unit: "box",
+        vendorStatus: "confirmed",
+        confirmedAt: new Date(Date.now() - 1800000),
+      },
+    }),
+
+    // Golden Grain Bakery → Delivered
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi7" },
+      update: {},
+      create: {
+        id: "seed-oi7",
+        orderId: order.id,
+        vendorId: goldenGrain.id,
+        productId: "seed-p8", // Sourdough Loaves
+        quantity: 15,
+        unit: "piece",
+        vendorStatus: "confirmed",
+        confirmedAt: new Date(Date.now() - 7200000),
+        deliveredAt: new Date(Date.now() - 3600000),
+      },
+    }),
+    prisma.orderItem.upsert({
+      where: { id: "seed-oi8" },
+      update: {},
+      create: {
+        id: "seed-oi8",
+        orderId: order.id,
+        vendorId: goldenGrain.id,
+        productId: "seed-p9", // Brioche Buns
+        quantity: 20,
+        unit: "piece",
+        vendorStatus: "confirmed",
+        confirmedAt: new Date(Date.now() - 7200000),
+        deliveredAt: new Date(Date.now() - 3600000),
+      },
+    }),
+  ])
+
+  // ------------------------------------------------------------------
+  // Subscription
+  // ------------------------------------------------------------------
+  await prisma.subscription.upsert({
+    where: { businessId: business.id },
+    update: {},
+    create: {
+      businessId: business.id,
+      plan: "free",
+      status: "active",
+      vendorLimit: 1,
+    },
+  })
+
   console.log("Seed complete.")
   console.log(`  Business : ${business.name} (${business.id})`)
   console.log(`  Login    : demo@orderroom.io / demo1234`)
+  console.log(`  Order    : ${order.id} (today, ${await prisma.orderItem.count({ where: { orderId: order.id } })} items)`)
 }
 
 main()

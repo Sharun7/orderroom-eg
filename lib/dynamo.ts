@@ -258,6 +258,15 @@ export async function getEventsByBusiness(
     .slice(0, limit)
 }
 
+/**
+ * Alias for getEventsByBusiness — for dashboard and activity feeds.
+ */
+export async function getOrderEventsForBusiness(
+  businessId: string,
+): Promise<OrderEvent[]> {
+  return getEventsByBusiness(businessId, 10)
+}
+
 // ---------------------------------------------------------------------------
 // Convenience wrappers — called from API routes
 // ---------------------------------------------------------------------------

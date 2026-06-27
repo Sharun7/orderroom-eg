@@ -17,11 +17,25 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
-    await new Promise((r) => setTimeout(r, 700))
-    if (email === "demo@orderroom.io" && password === "demo1234") {
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "Login failed. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      // Login successful - redirect to dashboard
       router.push("/dashboard")
-    } else {
-      setError("Invalid email or password. Try demo@orderroom.io / demo1234.")
+    } catch (err) {
+      setError("Network error. Please try again.")
       setLoading(false)
     }
   }

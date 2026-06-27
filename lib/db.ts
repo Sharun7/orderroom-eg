@@ -8,17 +8,66 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import type {
-  Business,
-  User,
-  Vendor,
-  Product,
-  Order,
-  OrderItem,
-} from "@prisma/client"
 
-// Re-export Prisma model types for use across the app
-export type { Business, User, Vendor, Product, Order, OrderItem }
+// Inline types until Prisma generates them
+export type Business = {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  type: string
+  createdAt: Date
+}
+
+export type User = {
+  id: string
+  name: string
+  email: string
+  passwordHash?: string
+  role: string
+  businessId: string
+  createdAt: Date
+}
+
+export type Vendor = {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  category: string
+  businessId: string
+  createdAt: Date
+}
+
+export type Product = {
+  id: string
+  name: string
+  unit: string
+  defaultQty: number
+  vendorId: string
+}
+
+export type Order = {
+  id: string
+  businessId: string
+  date: Date
+  status: string
+  notes?: string
+  createdAt: Date
+}
+
+export type OrderItem = {
+  id: string
+  orderId: string
+  vendorId: string
+  productId: string
+  quantity: number
+  unit: string
+  vendorStatus: string
+  confirmToken: string
+  confirmedAt?: Date
+  deliveredAt?: Date
+}
 
 /**
  * Subscription — defined inline until `prisma generate` picks up the schema
